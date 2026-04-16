@@ -6,7 +6,7 @@
  * every network request. Individual pages import the functions they need.
  */
 
-const BASE_URL = 'http://must.runasp.net';
+const BASE_URL = 'https://must.runasp.net';
 
 // ─────────────────────────────────────────
 // Helpers
