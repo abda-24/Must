@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+
+  <style>
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#1c306e,#00ac5c);
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .container{
+      width: 400px;
+      background:#fff;
+      padding:30px;
+      border-radius:15px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h2{
+      text-align:center;
+      margin-bottom:20px;
+      color:#1c306e;
+    }
+
+    .input-box{
+      margin-bottom:15px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border:1px solid #ddd;
+      border-radius:10px;
+      outline:none;
+      transition:0.3s;
+    }
+
+    input:focus{
+      border-color:#00ac5c;
+      box-shadow:0 0 5px rgba(0,172,92,0.3);
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#1c306e;
+      color:#fff;
+      font-size:16px;
+      cursor:pointer;
+      transition:0.3s;
+    }
+
+    button:hover{
+      background:#14224f;
+    }
+
+    .footer{
+      text-align:center;
+      margin-top:15px;
+      font-size:14px;
+    }
+
+    .footer a{
+      color:#00ac5c;
+      text-decoration:none;
+      font-weight:bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Login</h2>
+
+    <form id="loginForm">
+
+      <div class="input-box">
+        <input type="email" id="email" placeholder="Email" required />
+      </div>
+
+      <div class="input-box">
+        <input type="password" id="password" placeholder="Password" required />
+      </div>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="footer">
+      Don't have an account? <a href="signup.html">Sign Up</a>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'http://must.runasp.net';
+
+    document.getElementById("loginForm").addEventListener("submit", async function(e){
+      e.preventDefault();
+
+      const email    = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if(!email || !password){
+        alert("Please fill all fields");
+        return;
+      }
+
+      try {
+        const res = await fetch(BASE_URL + '/api/Auth/login', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email, password })
+        });
+
+        const text = await res.text();
+        console.log('Raw login response:', text);
+
+        if (!res.ok) {
+          let errMsg = text;
+          try { const j = JSON.parse(text); errMsg = j.message || j.title || JSON.stringify(j); } catch(_){}
+          throw new Error(errMsg || res.statusText);
+        }
+
+        // Extract token from any possible shape the API returns
+        let token = null;
+        let parsed = null;
+        try { parsed = JSON.parse(text); } catch(_) { parsed = null; }
+
+        if (typeof parsed === 'string' && parsed.trim().length > 20) {
+          token = parsed.trim();
+        } else if (parsed && typeof parsed === 'object') {
+          token = parsed.token
+               || parsed.Token
+               || parsed.accessToken
+               || parsed.AccessToken
+               || parsed.jwt
+               || parsed.JWT
+               || parsed.data
+               || null;
+          if (!token && typeof parsed === 'object') {
+            const vals = Object.values(parsed);
+            for (const v of vals) {
+              if (typeof v === 'string' && v.length > 40) { token = v; break; }
+            }
+          }
+        } else if (typeof text === 'string' && text.trim().length > 20 && !text.trim().startsWith('{')) {
+          token = text.trim().replace(/^"|"$/g, '');
+        }
+
+        if (token) {
+          localStorage.setItem('must_token', token);
+          localStorage.setItem('must_email', email);
+          console.log('Token saved successfully.');
+        } else {
+          console.warn('Login succeeded but no token found in response. Raw:', text);
+        }
+
+        alert("Login successful ✅");
+        if (email.endsWith('@must.edu.eg')) {
+          window.location.href = "admin/index.html";
+        } else {
+          window.location.href = "index.html";
+        }
+
+      } catch(err) {
+        console.error('Login error:', err);
+        alert("Login failed: " + err.message);
+      }
+    });
+  </script>
+
+</body>
+</html>

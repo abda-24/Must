@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up</title>
+
+  <style>
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#1c306e,#00ac5c);
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .container{
+      width: 400px;
+      background:#fff;
+      padding:30px;
+      border-radius:15px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h2{
+      text-align:center;
+      margin-bottom:20px;
+      color:#1c306e;
+    }
+
+    .input-box{
+      margin-bottom:15px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border:1px solid #ddd;
+      border-radius:10px;
+      outline:none;
+      transition:0.3s;
+    }
+
+    input:focus{
+      border-color:#00ac5c;
+      box-shadow:0 0 5px rgba(0,172,92,0.3);
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#00ac5c;
+      color:#fff;
+      font-size:16px;
+      cursor:pointer;
+      transition:0.3s;
+    }
+
+    button:hover{
+      background:#008f4c;
+    }
+
+    .footer{
+      text-align:center;
+      margin-top:15px;
+      font-size:14px;
+    }
+
+    .footer a{
+      color:#1c306e;
+      text-decoration:none;
+      font-weight:bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Create Account</h2>
+
+    <form id="signupForm">
+      <div class="input-box">
+        <input type="text" id="name" placeholder="Full Name" required />
+      </div>
+
+      <div class="input-box">
+        <input type="email" id="email" placeholder="Email" required />
+      </div>
+
+      <div class="input-box">
+        <input type="password" id="password" placeholder="Password" required />
+      </div>
+
+      <div class="input-box">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+      </div>
+
+      <button type="submit">Sign Up</button>
+    </form>
+
+    <div class="footer">
+      Already have an account? <a href="login.html">Login</a>
+    </div>
+  </div>
+
+  <script>
+    /* ── API Integration: POST /api/Auth/register + verify-otp ── */
+    const BASE_URL_SIGNUP = 'http://must.runasp.net';
+    let _registeredEmail  = '';
+
+    document.getElementById("signupForm").addEventListener("submit", async function(e){
+      e.preventDefault();
+
+      const name            = document.getElementById("name").value.trim();
+      const email           = document.getElementById("email").value.trim();
+      const password        = document.getElementById("password").value.trim();
+      const confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+      if(!name || !email || !password || !confirmPassword){
+        alert("Please fill all fields");
+        return;
+      }
+
+      if(password.length < 6){
+        alert("Password must be at least 6 characters");
+        return;
+      }
+
+      if(password !== confirmPassword){
+        alert("Passwords do not match");
+        return;
+      }
+
+      try {
+        const res  = await fetch(BASE_URL_SIGNUP + '/api/Auth/register', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ fullName: name, email, password })
+        });
+
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch(_) { data = text; }
+
+        if (!res.ok) {
+          const msg = (data && (data.message || data.title || JSON.stringify(data))) || res.statusText;
+          throw new Error(msg);
+        }
+
+        _registeredEmail = email;
+        console.log('Register response:', data);
+        alert("Account created! ✅  Please check your e-mail for the OTP code.");
+        showOtpSection();
+
+      } catch(err) {
+        console.error('Register error:', err);
+        alert("Registration failed: " + err.message);
+      }
+    });
+
+    function showOtpSection() {
+      if (document.getElementById('otpSection')) return;
+
+      const wrap = document.createElement('div');
+      wrap.id = 'otpSection';
+      wrap.style.marginTop = '15px';
+
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.id = 'otpCode'; inp.placeholder = 'Enter OTP Code';
+      inp.style.cssText = 'width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;outline:none;margin-bottom:10px;box-sizing:border-box;';
+
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.textContent = 'Verify OTP';
+      btn.style.cssText = 'width:100%;padding:12px;border:none;border-radius:10px;background:#00ac5c;color:#fff;font-size:16px;cursor:pointer;';
+
+      btn.addEventListener('click', async function () {
+        const code = document.getElementById('otpCode').value.trim();
+        if (!code) { alert('Please enter the OTP code'); return; }
+
+        try {
+          const res  = await fetch(BASE_URL_SIGNUP + '/api/Auth/verify-otp', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ email: _registeredEmail, otpCode: code })
+          });
+
+          const text = await res.text();
+          let data = null;
+          try { data = text ? JSON.parse(text) : null; } catch(_) { data = text; }
+
+          if (!res.ok) {
+            const msg = (data && (data.message || data.title || JSON.stringify(data))) || res.statusText;
+            throw new Error(msg);
+          }
+
+          if (data && data.token) localStorage.setItem('must_token', data.token);
+          console.log('OTP response:', data);
+          alert("Email verified successfully ✅  You can now login.");
+          window.location.href = 'login.html';
+
+        } catch(err) {
+          console.error('OTP error:', err);
+          alert("OTP verification failed: " + err.message);
+        }
+      });
+
+      wrap.appendChild(inp);
+      wrap.appendChild(btn);
+      const form = document.getElementById('signupForm');
+      form.parentNode.insertBefore(wrap, form.nextSibling);
+      wrap.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+</html>
