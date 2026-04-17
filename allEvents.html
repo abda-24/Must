@@ -1223,6 +1223,7 @@
                 <div class="event-info">
                     <div class="meta">
                         <span>📅 ${dStr}</span>
+                        ${event.location ? `<span>📍 ${escH(event.location)}</span>` : ''}
                     </div>
                     <h3>${escH(event.title)}</h3>
                     <p>${escH((event.description || '').slice(0, 120))}${event.description && event.description.length > 120 ? '…' : ''}</p>
@@ -1263,7 +1264,7 @@
                         title = ev.title || '';
                         desc = ev.description || '';
                         time = ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : 'TBA';
-                        loc = '';
+                        loc = ev.location || '';
                         imgSrc = ev.imageUrl || ev.image || 'img/event2.png';
                     } else { return; }
 

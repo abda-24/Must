@@ -143,6 +143,7 @@ async function loadEvents() {
         '<td>' + ev.id + '</td>' +
         '<td><strong>' + esc(ev.title) + '</strong></td>' +
         '<td>' + esc((ev.description||'').substring(0,80)) + (ev.description && ev.description.length > 80 ? '…' : '') + '</td>' +
+        '<td>' + esc(ev.location || '—') + '</td>' +
         '<td>' + shortDate(ev.eventDate) + '</td>' +
         '<td><div class="actions">' +
           '<button class="btn btn-sm btn-edit" onclick="editEvent('+ev.id+')"><i class="fa-solid fa-pen"></i></button>' +
@@ -157,6 +158,7 @@ function openEventModal(ev) {
   document.getElementById('eventId').value = ev ? ev.id : '';
   document.getElementById('eventTitleInput').value = ev ? ev.title : '';
   document.getElementById('eventDescInput').value = ev ? ev.description || '' : '';
+  document.getElementById('eventLocationInput').value = ev ? ev.location || '' : '';
   document.getElementById('eventDateInput').value = ev && ev.eventDate ? ev.eventDate.substring(0,16) : '';
   document.getElementById('eventModalOverlay').classList.add('show');
 }
@@ -178,6 +180,7 @@ document.getElementById('eventForm').addEventListener('submit', async function(e
   var body = {
     title:       document.getElementById('eventTitleInput').value.trim(),
     description: document.getElementById('eventDescInput').value.trim(),
+    location:    document.getElementById('eventLocationInput').value.trim(),
     eventDate:   document.getElementById('eventDateInput').value
   };
   try {

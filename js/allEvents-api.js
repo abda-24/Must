@@ -55,6 +55,7 @@
                         <div class="event-info">
                             <div class="meta">
                                 <span>📅 ${dateStr}</span>
+                                ${event.location ? `<span>📍 ${escHtml(event.location)}</span>` : ''}
                             </div>
                             <h3>${escHtml(event.title)}</h3>
                             <p>${escHtml((event.description || '').slice(0, 120))}${event.description && event.description.length > 120 ? '…' : ''}</p>
@@ -95,7 +96,7 @@
         if (time) time.innerText = '📅 ' + date;
 
         const loc = el('modalLocation');
-        if (loc) loc.innerText = '';
+        if (loc) loc.innerText = event.location ? '📍 ' + event.location : '';
 
         const modal = el('eventModal');
         if (modal) modal.style.display = 'flex';

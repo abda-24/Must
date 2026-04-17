@@ -89,6 +89,7 @@
                             <div class="event-info">
                                 <div class="meta">
                                     <span>📅 ${date ? date.toLocaleDateString() : 'TBA'}</span>
+                                    ${event.location ? `<span>📍 ${escHtml(event.location)}</span>` : ''}
                                 </div>
                                 <h3>${escHtml(event.title)}</h3>
                                 <p>${escHtml((event.description || '').slice(0, 100))}${event.description && event.description.length > 100 ? '…' : ''}</p>
@@ -125,7 +126,7 @@
         if (modalTitle) modalTitle.innerText   = event.title || '';
         if (modalDesc)  modalDesc.innerText    = event.description || '';
         if (modalTime)  modalTime.innerText    = '📅 ' + date;
-        if (modalLoc)   modalLoc.innerText     = '';
+        if (modalLoc)   modalLoc.innerText     = event.location ? '📍 ' + event.location : '';
         if (modal)      modal.style.display    = 'flex';
     };
 
@@ -247,6 +248,56 @@
     initSlider();
 
     // ════════════════════════════════════════
+    // ACTIVITIES  (index.html #activitiesContainer)
+    // ════════════════════════════════════════
+    function initActivities() {
+        const container = document.getElementById('activitiesContainer');
+        if (!container) return; // Only run on index.html
+
+        fetch('https://must.runasp.net/api/Activities')
+            .then(function(res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function(data) {
+                console.log('[index-api] Activities API response:', data);
+                if (!Array.isArray(data) || data.length === 0) {
+                    console.warn('[index-api] No activities returned from API');
+                    return;
+                }
+
+                container.innerHTML = '';
+
+                data.forEach(function(activity) {
+                    // Fix image URL — prepend base URL if path is relative
+                    var imgUrl = activity.imageUrl || activity.image || '';
+                    if (imgUrl && imgUrl.startsWith('/')) {
+                        imgUrl = 'https://must.runasp.net' + imgUrl;
+                    }
+                    if (!imgUrl) imgUrl = 'img/OIP.webp';
+
+                    var desc = (activity.description || '').length > 120
+                        ? activity.description.slice(0, 120) + '\u2026'
+                        : (activity.description || '');
+
+                    container.innerHTML += `
+                        <div class="card" style="cursor:pointer;" onclick="window.location.href='activity-details.html?id=${activity.id}'">
+                            <img src="${imgUrl}" alt="${escHtml(activity.title || '')}" onerror="this.src='img/OIP.webp'">
+                            <h3>${escHtml(activity.title || '')}</h3>
+                            <p>${escHtml(desc)}</p>
+                            <button onclick="event.stopPropagation(); window.location.href='activity-details.html?id=${activity.id}'">Explore</button>
+                        </div>`;
+                });
+
+                console.log('[index-api] Activities rendered:', data.length);
+            })
+            .catch(function(err) {
+                console.error('[index-api] Activities fetch error:', err);
+            });
+    }
+    initActivities();
+
+    // ════════════════════════════════════════
     // CLUBS
     // ════════════════════════════════════════
     function initClubs() {
@@ -316,6 +367,7 @@
     // ════════════════════════════════════════
     // AUTO-REFRESH LIVE DATA (5 seconds)
     // ════════════════════════════════════════
+    setInterval(initActivities, 5000);
     setInterval(initEvents, 5000);
     setInterval(initNews, 5000);
     setInterval(initSlider, 5000);

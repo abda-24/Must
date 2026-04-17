@@ -371,16 +371,42 @@ window.registerEvent = async function(eventId) {
 // ─────────────────────────────────────────
 // GLOBAL AUTH STATE & NAVIGATION FIXES
 // ─────────────────────────────────────────
+window.logout = function() {
+    localStorage.removeItem("must_token");
+    window.location.href = "login.html";
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Maintain User Authentication State
     const token = getToken();
+    const loginBtns = document.querySelectorAll('a[href*="login.html"], a.btn-login');
+    const signupBtns = document.querySelectorAll('a[href*="signup.html"], a.btn-register');
+    const navIcons = document.querySelector('.nav-icons');
+
     if (token) {
         // User must be treated as logged in -> Hide Login / Signup buttons
-        const loginBtns = document.querySelectorAll('a[href*="login.html"], a.btn-login');
-        const signupBtns = document.querySelectorAll('a[href*="signup.html"], a.btn-register');
-        
         loginBtns.forEach(btn => btn.style.display = 'none');
         signupBtns.forEach(btn => btn.style.display = 'none');
+
+        // Dynamically add logout button if missing
+        if (!document.getElementById('mustLogoutBtn') && navIcons) {
+            const logoutBtn = document.createElement('a');
+            logoutBtn.id = 'mustLogoutBtn';
+            logoutBtn.href = '#';
+            logoutBtn.className = 'btn-login';
+            logoutBtn.textContent = 'Logout';
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            navIcons.appendChild(logoutBtn);
+        }
+    } else {
+        // Not logged in
+        loginBtns.forEach(btn => btn.style.display = 'inline-block');
+        signupBtns.forEach(btn => btn.style.display = 'inline-block');
+        const logoutBtn = document.getElementById('mustLogoutBtn');
+        if (logoutBtn) logoutBtn.remove();
     }
 
     // 2. Fix Navigation Links Dynamically (avoids changing HTML structure)

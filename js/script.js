@@ -252,6 +252,7 @@ function escHtml(str) {
                     <div class="event-info">
                         <div class="meta">
                             <span>📅 ${dateStr}</span>
+                            ${ev.location ? `<span>📍 ${escHtml(ev.location)}</span>` : ''}
                         </div>
                         <h3>${escHtml(ev.title)}</h3>
                         <p>${escHtml((ev.description||'').slice(0,100))}${ev.description && ev.description.length>100?'…':''}</p>
@@ -273,7 +274,7 @@ window.openApiModal = function (index) {
     if (get('modalTitle'))    get('modalTitle').innerText   = ev.title || '';
     if (get('modalDesc'))     get('modalDesc').innerText    = ev.description || '';
     if (get('modalTime'))     get('modalTime').innerText    = '📅 ' + d;
-    if (get('modalLocation')) get('modalLocation').innerText = '';
+    if (get('modalLocation')) get('modalLocation').innerText = ev.location ? '📍 ' + ev.location : '';
     if (get('eventModal'))    get('eventModal').style.display = 'flex';
 };
 
@@ -361,30 +362,23 @@ window.MustAPI = {
 };
 
 // ── AUTH STATE MANAGEMENT ─────────────────────────────────────
-// Runs on every page load. Never clears token automatically.
-(function checkAuthState() {
-    const token = localStorage.getItem('must_token');
-    const email = localStorage.getItem('must_email') || 'User';
+window.logout = function() {
+    localStorage.removeItem("must_token");
+    window.location.href = "login.html";
+};
 
-    // Find the nav-icons div that contains Login/Signup links
+document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem("must_token");
+    const loginBtns = document.querySelectorAll('a[href*="login.html"], a.btn-login');
+    const signupBtns = document.querySelectorAll('a[href*="signup.html"], a.btn-register');
     const navIcons = document.querySelector('.nav-icons');
-    if (!navIcons) return;
 
     if (token) {
-        // User is logged in – replace Login/Signup with email + Logout
-        const loginLinks = navIcons.querySelectorAll('a.btn-login');
-        loginLinks.forEach(function(link) { link.style.display = 'none'; });
+        // Logged in
+        loginBtns.forEach(btn => btn.style.display = 'none');
+        signupBtns.forEach(btn => btn.style.display = 'none');
 
-        // Only inject once
-        if (!document.getElementById('mustLogoutBtn')) {
-            const sep = document.createElement('span');
-            sep.className = 'separator';
-            sep.textContent = '|';
-
-            const userSpan = document.createElement('span');
-            userSpan.style.cssText = 'color:#fff;font-size:0.9rem;margin-right:6px;';
-            userSpan.textContent = '👤 ' + email.split('@')[0];
-
+        if (!document.getElementById('mustLogoutBtn') && navIcons) {
             const logoutBtn = document.createElement('a');
             logoutBtn.id = 'mustLogoutBtn';
             logoutBtn.href = '#';
@@ -392,15 +386,117 @@ window.MustAPI = {
             logoutBtn.textContent = 'Logout';
             logoutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                localStorage.removeItem('must_token');
-                localStorage.removeItem('must_email');
-                window.location.href = './login.html';
+                logout();
             });
-
-            navIcons.appendChild(sep);
-            navIcons.appendChild(userSpan);
             navIcons.appendChild(logoutBtn);
         }
+    } else {
+        // Not logged in
+        loginBtns.forEach(btn => btn.style.display = 'inline-block');
+        signupBtns.forEach(btn => btn.style.display = 'inline-block');
+        const logoutBtn = document.getElementById('mustLogoutBtn');
+        if (logoutBtn) logoutBtn.remove();
     }
-    // If no token – do nothing, Login/Signup links remain as-is
+});
+
+// ── ACTIVITIES (index.html homepage section) ──────────────────
+async function loadActivities() {
+    const container = document.getElementById('activitiesContainer');
+    if (!container) return; // Not on index.html, skip
+
+    try {
+        const response = await fetch('https://must.runasp.net/api/Activities');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        console.log('[Activities] API response:', data);
+
+        if (!Array.isArray(data) || data.length === 0) {
+            console.warn('[Activities] Empty or invalid response from API');
+            return;
+        }
+
+        container.innerHTML = '';
+
+        data.forEach(function(activity) {
+            // Fix image URL — prepend base if relative
+            let imgUrl = activity.imageUrl || activity.image || '';
+            if (imgUrl && imgUrl.startsWith('/')) {
+                imgUrl = 'https://must.runasp.net' + imgUrl;
+            }
+            if (!imgUrl) imgUrl = 'img/OIP.webp';
+
+            const desc = (activity.description || '').length > 120
+                ? activity.description.slice(0, 120) + '\u2026'
+                : (activity.description || '');
+
+            container.innerHTML += `
+                <div class="card" style="cursor:pointer;" onclick="window.location.href='activity-details.html?id=${activity.id}'">
+                    <img src="${imgUrl}" alt="${activity.title || ''}" onerror="this.src='img/OIP.webp'">
+                    <h3>${activity.title || ''}</h3>
+                    <p>${desc}</p>
+                    <button onclick="event.stopPropagation(); window.location.href='activity-details.html?id=${activity.id}'">Explore</button>
+                </div>
+            `;
+        });
+
+        console.log('[Activities] Rendered', data.length, 'cards into #activitiesContainer');
+    } catch (err) {
+        console.error('[Activities] Fetch error:', err);
+    }
+}
+
+// Call immediately (DOM is already ready when this script loads)
+// and then poll every 5 seconds for real-time sync with Admin Dashboard
+loadActivities();
+setInterval(loadActivities, 5000);
+
+// ── ACTIVITIES (sports activities.html section) ────────────────
+(function initActivities() {
+    const container = document.querySelector('.sports-grid');
+    if (!container) return; // Only execute if container exists
+
+    async function loadActivities() {
+        try {
+            // MUST fetch WITHOUT token using async/await
+            const data = await jsonReq('GET', '/api/Activities', null, false);
+            if (!Array.isArray(data)) return;
+
+            // Clear container before rendering
+            container.innerHTML = "";
+
+            // Loop through all activities
+            data.forEach(activity => {
+                // Fix image URL mapping
+                let imgUrl = activity.image || 'img/football.PNG';
+                if (imgUrl.startsWith('/uploads')) {
+                    imgUrl = BASE_URL + imgUrl;
+                }
+
+                // Map data correctly into existing UI cards
+                const durationHtml = activity.duration ? `<strong>Duration:</strong> ${escHtml(activity.duration)}<br>` : '';
+                const playersHtml = activity.playersCount !== undefined ? `<strong>Players:</strong> ${escHtml(String(activity.playersCount))}` : '';
+                
+                container.innerHTML += `
+                    <div class="sport-card">
+                        <img src="${escHtml(imgUrl)}" alt="${escHtml(activity.title)}" class="sport-img" onerror="this.src='img/football.PNG'">
+                        <div class="sport-content">
+                            <h3>${escHtml(activity.title)}</h3>
+                            <p>
+                                ${escHtml(activity.description)}<br><br>
+                                ${durationHtml}
+                                ${playersHtml}
+                            </p>
+                            <a href="Register Team.html" class="btn-register">Register Now</a>
+                        </div>
+                    </div>
+                `;
+            });
+        } catch (err) {
+            console.error('Error loading activities:', err);
+        }
+    }
+
+    // Call on load and enable auto refresh every 5 seconds
+    loadActivities();
+    setInterval(loadActivities, 5000);
 })();
