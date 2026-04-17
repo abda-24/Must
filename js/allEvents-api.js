@@ -41,7 +41,9 @@
                 const month = date ? monthNames[date.getMonth()] : '--';
                 const dateStr = date ? date.toLocaleDateString() : 'TBA';
 
-                const imgSrc = event.imageUrl || event.image || 'img/event2.png';
+                let imgSrc = event.imageUrl || event.image || '';
+                if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+                if (!imgSrc) imgSrc = 'img/event2.png';
 
                 container.innerHTML += `
                     <div class="event-card" onclick="openApiModal(${index})">
@@ -84,7 +86,10 @@
         const el = function (id) { return document.getElementById(id); };
 
         const img = el('modalImg');
-        if (img) img.src = event.imageUrl || event.image || 'img/event2.png';
+        let imgUrl = event.imageUrl || event.image || '';
+        if (imgUrl && imgUrl.startsWith('/')) imgUrl = 'https://must.runasp.net' + imgUrl;
+        if (!imgUrl) imgUrl = 'img/event2.png';
+        if (img) img.src = imgUrl;
 
         const title = el('modalTitle');
         if (title) title.innerText = event.title || '';

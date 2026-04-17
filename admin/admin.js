@@ -139,8 +139,10 @@ async function loadEvents() {
     var tb = document.getElementById('eventsTable');
     if (!_events.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-calendar-xmark"></i><p>No events found</p></div></td></tr>'; return; }
     tb.innerHTML = _events.map(function(ev) {
+      var imgSrc = ev.imageUrl ? (ev.imageUrl.startsWith('http') ? ev.imageUrl : API + ev.imageUrl) : '';
       return '<tr>' +
         '<td>' + ev.id + '</td>' +
+        '<td>' + (imgSrc ? '<img src="' + esc(imgSrc) + '" onerror="this.style.display=\'none\'">' : '—') + '</td>' +
         '<td><strong>' + esc(ev.title) + '</strong></td>' +
         '<td>' + esc((ev.description||'').substring(0,80)) + (ev.description && ev.description.length > 80 ? '…' : '') + '</td>' +
         '<td>' + esc(ev.location || '—') + '</td>' +
@@ -160,6 +162,7 @@ function openEventModal(ev) {
   document.getElementById('eventDescInput').value = ev ? ev.description || '' : '';
   document.getElementById('eventLocationInput').value = ev ? ev.location || '' : '';
   document.getElementById('eventDateInput').value = ev && ev.eventDate ? ev.eventDate.substring(0,16) : '';
+  document.getElementById('eventFileInput').value = '';
   document.getElementById('eventModalOverlay').classList.add('show');
 }
 
@@ -177,15 +180,20 @@ window.deleteEvent = async function(id) {
 document.getElementById('eventForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   var id   = document.getElementById('eventId').value;
-  var body = {
-    title:       document.getElementById('eventTitleInput').value.trim(),
-    description: document.getElementById('eventDescInput').value.trim(),
-    location:    document.getElementById('eventLocationInput').value.trim(),
-    eventDate:   document.getElementById('eventDateInput').value
-  };
+  var fd = new FormData();
+  fd.append('Title', document.getElementById('eventTitleInput').value.trim());
+  fd.append('Description', document.getElementById('eventDescInput').value.trim());
+  fd.append('Location', document.getElementById('eventLocationInput').value.trim());
+  
+  var evtDate = document.getElementById('eventDateInput').value;
+  if (evtDate) fd.append('EventDate', evtDate);
+  
+  var file = document.getElementById('eventFileInput').files[0];
+  if (file) fd.append('Image', file);
+
   try {
-    if (id) await apiJSON('PUT', '/api/Events/' + id, body);
-    else    await apiJSON('POST', '/api/Events', body);
+    if (id) await apiForm('PUT', '/api/Events/' + id, fd);
+    else    await apiForm('POST', '/api/Events', fd);
     toast(id ? 'Event updated successfully' : 'Event created successfully');
     closeModal('eventModalOverlay');
     loadEvents();
@@ -671,7 +679,7 @@ document.getElementById('clubForm').addEventListener('submit', async function(e)
   fd.append('Name', document.getElementById('clubNameInput').value.trim());
   fd.append('Description', document.getElementById('clubDescInput').value.trim());
   var file = document.getElementById('clubFileInput').files[0];
-  if (file) fd.append('File', file);
+  if (file) fd.append('Image', file);
   try {
     if (id) await apiForm('PUT', '/api/Clubs/' + id, fd);
     else    await apiForm('POST', '/api/Clubs', fd);
@@ -693,7 +701,8 @@ async function loadCompetitions() {
     var tb = document.getElementById('competitionsTable');
     if (!_competitions.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-trophy"></i><p>No competitions found</p></div></td></tr>'; return; }
     tb.innerHTML = _competitions.map(function(comp) {
-      var imgSrc = comp.imageUrl ? (comp.imageUrl.startsWith('http') ? comp.imageUrl : API + comp.imageUrl) : '';
+      var imgPath = comp.imageUrl || comp.image || '';
+      var imgSrc = imgPath ? (imgPath.startsWith('http') ? imgPath : API + imgPath) : '';
       return '<tr>' +
         '<td>' + comp.id + '</td>' +
         '<td>' + (imgSrc ? '<img src="' + esc(imgSrc) + '" onerror="this.style.display=\'none\'">' : '—') + '</td>' +
@@ -740,9 +749,9 @@ document.getElementById('competitionForm').addEventListener('submit', async func
   var startDate = document.getElementById('competitionStartInput').value;
   var endDate   = document.getElementById('competitionEndInput').value;
   if (startDate) fd.append('StartDate', startDate);
-  if (endDate)   fd.append('EndDate', endDate);
+  if (endDate)   fd.append('RegistrationDeadline', endDate);
   var file = document.getElementById('competitionFileInput').files[0];
-  if (file) fd.append('File', file);
+  if (file) fd.append('Image', file);
   try {
     if (id) await apiForm('PUT', '/api/Competitions/' + id, fd);
     else    await apiForm('POST', '/api/Competitions', fd);

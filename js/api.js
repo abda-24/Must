@@ -130,13 +130,25 @@ async function getEventById(id) {
 }
 
 /** POST /api/Events (requires auth) */
-async function createEvent(title, description, eventDate) {
-    return jsonRequest('POST', '/api/Events', { title, description, eventDate }, true);
+async function createEvent(title, description, eventDate, location, file) {
+    const fd = new FormData();
+    fd.append('Title', title);
+    fd.append('Description', description);
+    fd.append('EventDate', eventDate);
+    fd.append('Location', location);
+    if (file) fd.append('Image', file);
+    return formRequest('POST', '/api/Events', fd, true);
 }
 
 /** PUT /api/Events/:id (requires auth) */
-async function updateEvent(id, title, description, eventDate) {
-    return jsonRequest('PUT', `/api/Events/${id}`, { title, description, eventDate }, true);
+async function updateEvent(id, title, description, eventDate, location, file) {
+    const fd = new FormData();
+    fd.append('Title', title);
+    fd.append('Description', description);
+    fd.append('EventDate', eventDate);
+    fd.append('Location', location);
+    if (file) fd.append('Image', file);
+    return formRequest('PUT', `/api/Events/${id}`, fd, true);
 }
 
 /** DELETE /api/Events/:id (requires auth) */
@@ -153,9 +165,59 @@ async function getClubs() {
     return jsonRequest('GET', '/api/Clubs');
 }
 
+/** POST /api/Clubs (requires auth) */
+async function createClub(name, description, file) {
+    const fd = new FormData();
+    fd.append('Name', name);
+    fd.append('Description', description);
+    if (file) fd.append('Image', file);
+    return formRequest('POST', '/api/Clubs', fd, true);
+}
+
+/** PUT /api/Clubs/:id (requires auth) */
+async function updateClub(id, name, description, file) {
+    const fd = new FormData();
+    fd.append('Name', name);
+    fd.append('Description', description);
+    if (file) fd.append('Image', file);
+    return formRequest('PUT', `/api/Clubs/${id}`, fd, true);
+}
+
+/** DELETE /api/Clubs/:id (requires auth) */
+async function deleteClub(id) {
+    return jsonRequest('DELETE', `/api/Clubs/${id}`, null, true);
+}
+
 /** GET /api/Competitions */
 async function getCompetitions() {
     return jsonRequest('GET', '/api/Competitions');
+}
+
+/** POST /api/Competitions (requires auth) */
+async function createCompetition(title, description, registrationDeadline, startDate, file) {
+    const fd = new FormData();
+    fd.append('Title', title);
+    fd.append('Description', description);
+    fd.append('RegistrationDeadline', registrationDeadline);
+    fd.append('StartDate', startDate);
+    if (file) fd.append('Image', file);
+    return formRequest('POST', '/api/Competitions', fd, true);
+}
+
+/** PUT /api/Competitions/:id (requires auth) */
+async function updateCompetition(id, title, description, registrationDeadline, startDate, file) {
+    const fd = new FormData();
+    fd.append('Title', title);
+    fd.append('Description', description);
+    fd.append('RegistrationDeadline', registrationDeadline);
+    fd.append('StartDate', startDate);
+    if (file) fd.append('Image', file);
+    return formRequest('PUT', `/api/Competitions/${id}`, fd, true);
+}
+
+/** DELETE /api/Competitions/:id (requires auth) */
+async function deleteCompetition(id) {
+    return jsonRequest('DELETE', `/api/Competitions/${id}`, null, true);
 }
 
 // ─────────────────────────────────────────
@@ -334,7 +396,8 @@ window.MustAPI = {
     // settings
     getSettings, updateSettings,
     // clubs & competitions
-    getClubs, getCompetitions
+    getClubs, createClub, updateClub, deleteClub,
+    getCompetitions, createCompetition, updateCompetition, deleteCompetition
 };
 
 // ─────────────────────────────────────────

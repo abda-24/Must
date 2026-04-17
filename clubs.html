@@ -771,7 +771,9 @@
                     if (!data || !Array.isArray(data) || data.length === 0) return;
                     grid.innerHTML = '';
                     data.forEach(function(club) {
-                        var imgSrc = club.imageUrl || club.image || 'img/event2.png';
+                        var imgSrc = club.imageUrl || club.image || '';
+                        if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+                        if (!imgSrc) imgSrc = 'img/event2.png';
                         var desc = (club.description || '').slice(0, 200);
                         grid.innerHTML += '<div class="club-card">' +
                             '<img src="' + imgSrc + '" alt="' + (club.name || '') + '" class="club-img" onerror="this.src=\'img/event2.png\'">' +

@@ -70,7 +70,7 @@
         <div id="sec-events" class="section">
           <div class="topbar"><h2>Events Management</h2><button class="btn btn-primary" onclick="openEventModal()"><i class="fa-solid fa-plus"></i> Add Event</button></div>
           <div class="card">
-            <table><thead><tr><th>#</th><th>Title</th><th>Description</th><th>Location</th><th>Date</th><th>Actions</th></tr></thead>
+            <table><thead><tr><th>#</th><th>Image</th><th>Title</th><th>Description</th><th>Location</th><th>Date</th><th>Actions</th></tr></thead>
             <tbody id="eventsTable"></tbody></table>
           </div>
         </div>
@@ -200,6 +200,7 @@
         <label>Description</label><textarea id="eventDescInput"></textarea>
         <label>Location</label><input type="text" id="eventLocationInput">
         <label>Event Date</label><input type="datetime-local" id="eventDateInput" required>
+        <label>Image</label><input type="file" id="eventFileInput" accept="image/*">
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-cancel" onclick="closeModal('eventModalOverlay')">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div>
     </form>

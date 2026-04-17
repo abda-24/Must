@@ -77,10 +77,15 @@
                     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                     const month      = date ? monthNames[date.getMonth()] : '--';
 
+                    // Resolve image URL
+                    let evtImg = event.imageUrl || event.image || '';
+                    if (evtImg && evtImg.startsWith('/')) evtImg = 'https://must.runasp.net' + evtImg;
+                    if (!evtImg) evtImg = 'img/event2.png';
+
                     const card = `
                         <div class="event-card" onclick="openApiEventModal(${index})" style="cursor:pointer;">
                             <div class="image-box">
-                                <img src="${event.imageUrl || event.image || 'img/event2.png'}" alt="${escHtml(event.title)}" onerror="this.src='img/event2.png'">
+                                <img src="${evtImg}" alt="${escHtml(event.title)}" onerror="this.src='img/event2.png'">
                                 <div class="date-box">
                                     <div class="day">${day}</div>
                                     <div class="month">${month}</div>
@@ -122,7 +127,10 @@
         const modalLoc   = document.getElementById('modalLocation');
         const modal      = document.getElementById('eventModal');
 
-        if (modalImg)   modalImg.src           = event.imageUrl || event.image || 'img/event2.png';
+        let mEvtImg = event.imageUrl || event.image || '';
+        if (mEvtImg && mEvtImg.startsWith('/')) mEvtImg = 'https://must.runasp.net' + mEvtImg;
+        if (!mEvtImg) mEvtImg = 'img/event2.png';
+        if (modalImg)   modalImg.src           = mEvtImg;
         if (modalTitle) modalTitle.innerText   = event.title || '';
         if (modalDesc)  modalDesc.innerText    = event.description || '';
         if (modalTime)  modalTime.innerText    = '📅 ' + date;
@@ -154,9 +162,13 @@
 
                 newsToShow.forEach(function (item, index) {
                     const date = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '';
+                    let imgSrc = item.imageUrl || item.image || '';
+                    if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+                    if (!imgSrc) imgSrc = 'img/news5.jpg';
+
                     const card = `
                         <div class="card" onclick="openApiNewsModal(${index})" style="cursor:pointer;">
-                            <img src="${item.imageUrl || item.image || 'img/news5.jpg'}" alt="${escHtml(item.title)}" onerror="this.src='img/news5.jpg'" style="width:100%;height:200px;object-fit:cover;">
+                            <img src="${escHtml(imgSrc)}" alt="${escHtml(item.title)}" onerror="this.src='img/news5.jpg'" style="width:100%;height:200px;object-fit:cover;">
                             <div class="card-content">
                                 <div class="meta">
                                     <span><i class="fa-regular fa-user"></i> MUST Admin</span>
@@ -175,6 +187,7 @@
             });
     }
     initNews();
+    setInterval(initNews, 5000);
 
     /** Open news modal with API data */
     window.openApiNewsModal = function (index) {
@@ -191,7 +204,11 @@
         const newsDesc   = document.getElementById('newsDesc');
         const modal      = document.getElementById('newsModal');
 
-        if (newsImg)    newsImg.src          = item.imageUrl || item.image || 'img/news5.jpg';
+        let imgSrc = item.imageUrl || item.image || '';
+        if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+        if (!imgSrc) imgSrc = 'img/news5.jpg';
+
+        if (newsImg)    newsImg.src          = imgSrc;
         if (newsTitle)  newsTitle.innerText  = item.title || '';
         if (newsAuthor) newsAuthor.innerText = 'MUST Admin';
         if (newsDate)   newsDate.innerText   = date;
@@ -312,7 +329,9 @@
                 if (!data || !Array.isArray(data) || data.length === 0) return;
                 grid.innerHTML = '';
                 data.forEach(function (club) {
-                    const imgSrc = club.imageUrl || club.image || 'img/club-default.png';
+                    let imgSrc = club.imageUrl || club.image || '';
+                    if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+                    if (!imgSrc) imgSrc = 'img/event2.png';
                     grid.innerHTML += `
                         <div class="club-card">
                             <img src="${escHtml(imgSrc)}" alt="${escHtml(club.name)}" class="club-img"
@@ -342,7 +361,9 @@
                 if (!data || !Array.isArray(data) || data.length === 0) return;
                 track.innerHTML = '';
                 data.forEach(function (comp) {
-                    const imgSrc = comp.imageUrl || comp.image || 'img/comp-default.jpg';
+                    let imgSrc = comp.imageUrl || comp.image || '';
+                    if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+                    if (!imgSrc) imgSrc = 'img/event2.png';
                     const dateStr = comp.startDate
                         ? '\ud83d\udcc5 Starts: ' + new Date(comp.startDate).toLocaleDateString()
                         : (comp.endDate ? '\ud83c\udfc1 Deadline: ' + new Date(comp.endDate).toLocaleDateString() : '');
