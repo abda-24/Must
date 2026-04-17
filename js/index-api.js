@@ -208,7 +208,7 @@
                 if (!data || !Array.isArray(data) || data.length === 0) return;
 
                 // Filter only active slides
-                const active = data.filter(function (s) { return s.isActive !== false; });
+                const active = data.filter(function (s) { return s.isActive === true; });
                 if (active.length === 0) return;
 
                 const container = document.querySelector('.content-container');
@@ -223,9 +223,14 @@
 
                 active.forEach(function (slide, i) {
                     const div = document.createElement('div');
-                    div.className = 'carousel-slide' + (i === 0 ? ' active' : '');
-                    if (slide.imageUrl || slide.image) {
-                        div.style.backgroundImage = `url('${slide.imageUrl || slide.image}')`;
+                    const isActive = i === 0 ? " active" : "";
+                    div.className = 'carousel-slide' + isActive;
+                    
+                    let imgPath = slide.imageUrl || slide.image;
+                    if (imgPath) {
+                        const BASE_URL = "https://must.runasp.net";
+                        const fullImageUrl = imgPath.startsWith('http') ? imgPath : BASE_URL + imgPath;
+                        div.style.backgroundImage = `url('${fullImageUrl}')`;
                     }
                     container.insertBefore(div, controls);
                 });

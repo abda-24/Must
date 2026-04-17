@@ -250,7 +250,7 @@ async function getSlider() {
  */
 async function createSlider(file, title, subTitle, order) {
     const fd = new FormData();
-    fd.append('File', file);
+    fd.append('Image', file);
     fd.append('Title', title);
     fd.append('SubTitle', subTitle);
     fd.append('Order', order);

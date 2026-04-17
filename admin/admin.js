@@ -408,7 +408,7 @@ document.getElementById('sliderForm').addEventListener('submit', async function(
   fd.append('SubTitle', document.getElementById('sliderSubInput').value.trim());
   fd.append('Order', parseInt(document.getElementById('sliderOrderInput').value) || 0);
   var file = document.getElementById('sliderFileInput').files[0];
-  if (file) fd.append('File', file);
+  if (file) fd.append('Image', file);
   try {
     await apiForm('POST', '/api/Slider', fd);
     toast('Slide created successfully');
@@ -460,6 +460,7 @@ window.addEventListener('DOMContentLoaded', function() {
     setInterval(loadEvents, 5000);
     setInterval(loadNews, 5000);
     setInterval(loadActivities, 5000);
+    setInterval(loadSlider, 5000);
     setInterval(loadClubs, 5000);
     setInterval(loadCompetitions, 5000);
 });
