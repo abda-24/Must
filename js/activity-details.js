@@ -57,40 +57,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         // 5. Registration Logic
         const registerBtn = document.getElementById("registerBtn");
         if (registerBtn) {
-            registerBtn.addEventListener("click", async () => {
-                const token = localStorage.getItem("must_token");
-                if (!token) {
-                    alert("Please login first to register for this activity.");
-                    window.location.href = "login.html";
-                    return;
-                }
-
-                try {
-                    registerBtn.disabled = true;
-                    registerBtn.innerText = "Registering...";
-
-                    const regResponse = await fetch("https://must.runasp.net/api/Participants/RegisterActivity", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ activityId: parseInt(id) })
-                    });
-
-                    if (!regResponse.ok) {
-                        const errData = await regResponse.json().catch(() => ({}));
-                        throw new Error(errData.message || "Registration failed. You may already be registered or invalid request.");
-                    }
-
-                    alert("Successfully registered for this activity! ✅");
-                    registerBtn.innerText = "Registered";
-                } catch (err) {
-                    console.error("Registration error:", err);
-                    alert(err.message);
-                    registerBtn.disabled = false;
-                    registerBtn.innerText = "Register";
-                }
+            registerBtn.addEventListener("click", () => {
+                window.location.href = "Sports/Register Team.html?id=" + encodeURIComponent(id);
             });
         }
 

@@ -738,7 +738,7 @@
       </select>
 
       <div class="form-buttons">
-        <a href="Match schedule.html" class="button btn-register">Register</a>
+        <button type="submit" class="button btn-register">Register</button>
         <button type="reset" class="button btn-reset">Reset</button>
       </div>
 
@@ -795,7 +795,88 @@
     </div>
   </footer>
 <script>
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Read activity ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const activityId = urlParams.get('id');
 
+    const activitySelect = document.getElementById('activity');
+    if (!activitySelect) return;
+
+    // 2. Fetch activities and populate dropdown dynamically
+    try {
+        const response = await fetch("https://must.runasp.net/api/Activities");
+        if (response.ok) {
+            const data = await response.json();
+            activitySelect.innerHTML = '<option value="">-- Select Activity --</option>';
+            data.forEach(act => {
+                const option = document.createElement('option');
+                option.value = act.id;
+                option.textContent = act.title || 'Unknown Activity';
+                // 3. Pre-fill selected activity based on URL param
+                if (activityId && act.id == activityId) {
+                    option.selected = true;
+                }
+                activitySelect.appendChild(option);
+            });
+        }
+    } catch (err) {
+        console.error("Error fetching activities:", err);
+    }
+
+    // 4. Form Submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const token = localStorage.getItem("must_token");
+            if (!token) {
+                alert("Please login first to register.");
+                window.location.href = "../login.html";
+                return;
+            }
+
+            const selectedActivityId = activitySelect.value;
+            if (!selectedActivityId) {
+                alert("Please select an activity.");
+                return;
+            }
+
+            const firstName = document.getElementById('firstName') ? document.getElementById('firstName').value.trim() : '';
+            const lastName = document.getElementById('lastName') ? document.getElementById('lastName').value.trim() : '';
+            const universityId = document.getElementById('universityId') ? document.getElementById('universityId').value.trim() : '';
+            const faculty = document.getElementById('faculty') ? document.getElementById('faculty').value : '';
+
+            const registerBtn = form.querySelector('.btn-register');
+            if (registerBtn) {
+                registerBtn.disabled = true;
+                registerBtn.innerText = "Registering...";
+            }
+
+            try {
+                await fetch("https://must.runasp.net/api/Participants/RegisterActivity", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        firstName: firstName,
+                        lastName: lastName,
+                        universityId: parseInt(universityId) || 0,
+                        faculty: faculty,
+                        activityId: parseInt(selectedActivityId) 
+                    })
+                });
+            } catch (err) {
+                // Ignore errors
+            } finally {
+                window.location.href = "http://127.0.0.1:5500/index.html";
+            }
+        });
+    }
+});
 </script>
 </body>
 

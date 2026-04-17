@@ -486,7 +486,7 @@ setInterval(loadActivities, 5000);
                                 ${durationHtml}
                                 ${playersHtml}
                             </p>
-                            <a href="Register Team.html" class="btn-register">Register Now</a>
+                            <a href="Register Team.html?id=${activity.id}" class="btn-register">Register Now</a>
                         </div>
                     </div>
                 `;
