@@ -1209,7 +1209,9 @@
                             const day = d ? String(d.getDate()).padStart(2, '0') : '--';
                             const month = d ? monthNames[d.getMonth()] : '--';
                             const dStr = d ? d.toLocaleDateString() : 'TBA';
-                            const img = 'img/event2.png'; // Events API has no image field currently
+                            let img = event.imageUrl || event.image || '';
+                            if (img && img.startsWith('/')) img = 'https://must.runasp.net' + img;
+                            if (!img) img = 'img/event2.png';
 
                             container.innerHTML += `
             <div class="event-card" onclick="openModal(${index})">
@@ -1265,7 +1267,9 @@
                         desc = ev.description || '';
                         time = ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : 'TBA';
                         loc = ev.location || '';
-                        imgSrc = ev.imageUrl || ev.image || 'img/event2.png';
+                        imgSrc = ev.imageUrl || ev.image || '';
+                        if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://must.runasp.net' + imgSrc;
+                        if (!imgSrc) imgSrc = 'img/event2.png';
                     } else { return; }
 
                     document.getElementById("modalImg").src = imgSrc;
