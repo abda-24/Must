@@ -1217,7 +1217,7 @@ body {
 
     <script>
     /* ── API Integration: GET /api/News ── */
-    const BASE_URL_NEWS   = 'http://must.runasp.net';
+    const BASE_URL_NEWS   = 'https://must.runasp.net';
     const newsContainer   = document.querySelector('.news-container');
     let _apiAllNews       = [];
 
@@ -1284,6 +1284,7 @@ body {
     }
 
     loadNews();
+    setInterval(loadNews, 5000); // Auto-refresh every 5 seconds
 
     // User Authentication State Logic
     window.addEventListener("DOMContentLoaded", () => {

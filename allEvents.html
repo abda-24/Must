@@ -1184,13 +1184,13 @@
         <div class="footer-bottom">
             <script>
                 /* ── API Integration: GET /api/Events ── */
-                const BASE_URL_EV = 'http://must.runasp.net';
+                const BASE_URL_EV = 'https://must.runasp.net';
                 const container = document.getElementById("eventsContainer");
                 let _apiEvents = [];
 
                 async function loadEvents() {
                     try {
-                        const res = await fetch("http://must.runasp.net/api/Events");
+                        const res = await fetch("https://must.runasp.net/api/Events");
                         const data = await res.json();
 
                         const container = document.getElementById("eventsContainer");

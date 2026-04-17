@@ -3,7 +3,7 @@
    Full CRUD for Events, News, Menu, Slider, Contacts, Settings
    ═══════════════════════════════════════════════════════════════ */
 
-const API = 'http://must.runasp.net';
+const API = 'https://must.runasp.net';
 const TOKEN_KEY = 'must_token';
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }

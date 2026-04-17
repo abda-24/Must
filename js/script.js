@@ -112,10 +112,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 /* ─────────────────────────────────────────────────────────────────
    API INTEGRATION  (index.html only – guarded by element checks)
-   BASE URL: http://must.runasp.net
+   BASE URL: https://must.runasp.net
    ───────────────────────────────────────────────────────────────── */
 
-const BASE_URL = 'http://must.runasp.net';
+const BASE_URL = 'https://must.runasp.net';
 
 // ── Token helpers ──────────────────────────────────────────────
 function getToken()        { return localStorage.getItem('must_token'); }

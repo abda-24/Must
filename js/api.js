@@ -1,6 +1,6 @@
 /**
  * MUST University – API Integration Module
- * Base URL: http://must.runasp.net
+ * Base URL: https://must.runasp.net
  * ----------------------------------------
  * This file contains ALL API calls. It is the single source of truth for
  * every network request. Individual pages import the functions they need.
