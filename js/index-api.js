@@ -20,7 +20,7 @@
     // ════════════════════════════════════════
     // CONTACT FORM
     // ════════════════════════════════════════
-    (function initContactForm() {
+    function initContactForm() {
         const form = document.getElementById('contactForm');
         if (!form) return;
 
@@ -45,12 +45,13 @@
                 alert('Failed to send message: ' + err.message);
             }
         });
-    })();
+    }
+    initContactForm();
 
     // ════════════════════════════════════════
     // EVENTS  (index.html shows first 3)
     // ════════════════════════════════════════
-    (function initEvents() {
+    function initEvents() {
         const container = document.getElementById('eventsContainer');
         if (!container) return;
 
@@ -102,7 +103,8 @@
                 console.error('Events API error:', err);
                 // Keep static content on failure – do nothing
             });
-    })();
+    }
+    initEvents();
 
     /** Open event modal with API data */
     window.openApiEventModal = function (index) {
@@ -130,7 +132,7 @@
     // ════════════════════════════════════════
     // NEWS  (index.html shows first 3)
     // ════════════════════════════════════════
-    (function initNews() {
+    function initNews() {
         const newsContainer = document.querySelector('#news .news-container');
         if (!newsContainer) return;
 
@@ -170,7 +172,8 @@
             .catch(function (err) {
                 console.error('News API error:', err);
             });
-    })();
+    }
+    initNews();
 
     /** Open news modal with API data */
     window.openApiNewsModal = function (index) {
@@ -198,7 +201,7 @@
     // ════════════════════════════════════════
     // SLIDER (optional – load from API if available)
     // ════════════════════════════════════════
-    (function initSlider() {
+    function initSlider() {
         // Only update slides if we have active ones from the API
         MustAPI.getSlider()
             .then(function (data) {
@@ -235,11 +238,85 @@
             .catch(function (err) {
                 console.error('Slider API error:', err);
             });
-    })();
+    }
+    initSlider();
 
     // ════════════════════════════════════════
-    // Utility
+    // CLUBS
     // ════════════════════════════════════════
+    function initClubs() {
+        // Try both possible container IDs (index.html uses #clubs section, clubs.html has #clubsContainer)
+        const grid = document.getElementById('clubsContainer') ||
+                     document.querySelector('#clubs .clubs-grid') ||
+                     document.querySelector('.clubs-section .clubs-grid');
+        if (!grid) return;
+
+        MustAPI.getClubs()
+            .then(function (data) {
+                if (!data || !Array.isArray(data) || data.length === 0) return;
+                grid.innerHTML = '';
+                data.forEach(function (club) {
+                    const imgSrc = club.imageUrl || club.image || 'img/club-default.png';
+                    grid.innerHTML += `
+                        <div class="club-card">
+                            <img src="${escHtml(imgSrc)}" alt="${escHtml(club.name)}" class="club-img"
+                                 onerror="this.src='img/event2.png'">
+                            <h3>${escHtml(club.name)}</h3>
+                            <p>${escHtml((club.description || '').slice(0, 180))}${club.description && club.description.length > 180 ? '\u2026' : ''}</p>
+                            <button class="join-btn"><a href="./registerClub.html">Registration</a></button>
+                        </div>`;
+                });
+                console.log('Clubs loaded from API:', data.length);
+            })
+            .catch(function (err) { console.error('Clubs API error:', err); });
+    }
+    initClubs();
+
+    // ════════════════════════════════════════
+    // COMPETITIONS
+    // ════════════════════════════════════════
+    function initCompetitions() {
+        // Try both index.html slider-track and a standalone container
+        const track = document.getElementById('competitionsContainer') ||
+                      document.querySelector('#competitions .slider-track');
+        if (!track) return;
+
+        MustAPI.getCompetitions()
+            .then(function (data) {
+                if (!data || !Array.isArray(data) || data.length === 0) return;
+                track.innerHTML = '';
+                data.forEach(function (comp) {
+                    const imgSrc = comp.imageUrl || comp.image || 'img/comp-default.jpg';
+                    const dateStr = comp.startDate
+                        ? '\ud83d\udcc5 Starts: ' + new Date(comp.startDate).toLocaleDateString()
+                        : (comp.endDate ? '\ud83c\udfc1 Deadline: ' + new Date(comp.endDate).toLocaleDateString() : '');
+                    track.innerHTML += `
+                        <div class="slide">
+                            <div class="competition-card">
+                                <img src="${escHtml(imgSrc)}" class="comp-img"
+                                     onerror="this.src='img/event2.png'">
+                                <h3>${escHtml(comp.title || comp.name)}</h3>
+                                <p class="comp-desc">${escHtml((comp.description || '').slice(0, 180))}${comp.description && comp.description.length > 180 ? '\u2026' : ''}</p>
+                                ${dateStr ? `<div class="comp-date">${escHtml(dateStr)}</div>` : ''}
+                                <button class="join-btn"><a href="./registerClub.html">Registration</a></button>
+                            </div>
+                        </div>`;
+                });
+                console.log('Competitions loaded from API:', data.length);
+            })
+            .catch(function (err) { console.error('Competitions API error:', err); });
+    }
+    initCompetitions();
+
+    // ════════════════════════════════════════
+    // AUTO-REFRESH LIVE DATA (5 seconds)
+    // ════════════════════════════════════════
+    setInterval(initEvents, 5000);
+    setInterval(initNews, 5000);
+    setInterval(initSlider, 5000);
+    setInterval(initClubs, 5000);
+    setInterval(initCompetitions, 5000);
+
     function escHtml(str) {
         if (!str) return '';
         return String(str)
@@ -248,5 +325,4 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
-
 })();

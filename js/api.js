@@ -145,6 +145,20 @@ async function deleteEvent(id) {
 }
 
 // ─────────────────────────────────────────
+// CLUBS & COMPETITIONS
+// ─────────────────────────────────────────
+
+/** GET /api/Clubs */
+async function getClubs() {
+    return jsonRequest('GET', '/api/Clubs');
+}
+
+/** GET /api/Competitions */
+async function getCompetitions() {
+    return jsonRequest('GET', '/api/Competitions');
+}
+
+// ─────────────────────────────────────────
 // NEWS
 // ─────────────────────────────────────────
 
@@ -319,4 +333,81 @@ window.MustAPI = {
     getMenu, getMenuById, createMenu, updateMenu, deleteMenu,
     // settings
     getSettings, updateSettings,
+    // clubs & competitions
+    getClubs, getCompetitions
 };
+
+// ─────────────────────────────────────────
+// PARTICIPANT INTEGRATION
+// ─────────────────────────────────────────
+window.joinClub = async function(clubId) {
+    if (!getToken()) { alert("Please login first"); return; }
+    return jsonRequest('POST', '/api/Participants/JoinClub', { clubId }, true)
+        .then(res => { alert("Joined club successfully!"); return res; })
+        .catch(err => { alert("Failed to join club: " + err.message); throw err; });
+};
+
+window.registerActivity = async function(activityId) {
+    if (!getToken()) { alert("Please login first"); return; }
+    return jsonRequest('POST', '/api/Participants/RegisterActivity', { activityId }, true)
+        .then(res => { alert("Registered for activity successfully!"); return res; })
+        .catch(err => { alert("Failed to register for activity: " + err.message); throw err; });
+};
+
+window.registerCompetition = async function(competitionId) {
+    if (!getToken()) { alert("Please login first"); return; }
+    return jsonRequest('POST', '/api/Participants/RegisterCompetition', { competitionId }, true)
+        .then(res => { alert("Registered for competition successfully!"); return res; })
+        .catch(err => { alert("Failed to register for competition: " + err.message); throw err; });
+};
+
+window.registerEvent = async function(eventId) {
+    if (!getToken()) { alert("Please login first"); return; }
+    return jsonRequest('POST', '/api/Participants/RegisterEvent', { eventId }, true)
+        .then(res => { alert("Registered for event successfully!"); return res; })
+        .catch(err => { alert("Failed to register for event: " + err.message); throw err; });
+};
+
+// ─────────────────────────────────────────
+// GLOBAL AUTH STATE & NAVIGATION FIXES
+// ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Maintain User Authentication State
+    const token = getToken();
+    if (token) {
+        // User must be treated as logged in -> Hide Login / Signup buttons
+        const loginBtns = document.querySelectorAll('a[href*="login.html"], a.btn-login');
+        const signupBtns = document.querySelectorAll('a[href*="signup.html"], a.btn-register');
+        
+        loginBtns.forEach(btn => btn.style.display = 'none');
+        signupBtns.forEach(btn => btn.style.display = 'none');
+    }
+
+    // 2. Fix Navigation Links Dynamically (avoids changing HTML structure)
+    document.querySelectorAll('a').forEach(a => {
+        const text = a.textContent.trim().toLowerCase();
+        const href = a.getAttribute('href');
+        
+        if (!href) return; // Skip anchors without href
+
+        // Map requirements:
+        if (text === 'home') a.href = 'index.html';
+        else if (text.includes('activities')) a.href = 'index.html'; // fallback if activities.html missing
+        else if (text.includes('events') || href.includes('#events')) a.href = 'allEvents.html';
+        else if (text.includes('news') || href.includes('#news')) a.href = 'allNews.html';
+        else if (text.includes('competitions')) a.href = 'index.html'; // fallback
+        else if (text.includes('clubs')) a.href = 'clubs.html'; // fallback 
+        else if (text.includes('contact us') || text.includes('contact')) a.href = 'index.html'; // fallback
+        
+        // Ensure no "Cannot GET" errors by redirecting # links that do nothing
+        if (a.getAttribute('href') === '#') {
+            a.addEventListener('click', (e) => {
+                // If it's just a dropdown toggle, don't do anything specific
+                if (!a.querySelector('.fa-angle-down')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+});
+

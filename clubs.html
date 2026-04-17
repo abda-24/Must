@@ -661,7 +661,7 @@
     <section class="clubs-section">
         <h1>Student Clubs at MUST</h1>
 
-        <div class="clubs-grid">
+        <div class="clubs-grid" id="clubsContainer">
 
             <div class="club-card">
                 <img src="./inf proj/img/logo-lockup-gdg-horizontal_720.png" alt="GDG Club" class="club-img">
@@ -760,6 +760,35 @@
 
  
 
+    <script src="js/api.js"></script>
+    <script>
+        // Load clubs from API into clubs.html
+        function loadClubsPage() {
+            var grid = document.getElementById('clubsContainer');
+            if (!grid) return;
+            MustAPI.getClubs()
+                .then(function(data) {
+                    if (!data || !Array.isArray(data) || data.length === 0) return;
+                    grid.innerHTML = '';
+                    data.forEach(function(club) {
+                        var imgSrc = club.imageUrl || club.image || 'img/event2.png';
+                        var desc = (club.description || '').slice(0, 200);
+                        grid.innerHTML += '<div class="club-card">' +
+                            '<img src="' + imgSrc + '" alt="' + (club.name || '') + '" class="club-img" onerror="this.src=\'img/event2.png\'">' +
+                            '<h3>' + (club.name || '') + '</h3>' +
+                            '<p>' + desc + '</p>' +
+                            '<button class="join-btn"><a href="./registerClub.html">Registration</a></button>' +
+                            '</div>';
+                    });
+                    console.log('clubs.html: loaded', data.length, 'clubs from API');
+                })
+                .catch(function(err) { console.error('clubs.html API error:', err); });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            loadClubsPage();
+            setInterval(loadClubsPage, 5000);
+        });
+    </script>
     <script src="js/script.js"></script>
 </body>
 

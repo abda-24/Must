@@ -20,7 +20,8 @@
     window._apiAllEvents = [];
 
     // ── Load Events from API ──────────────────────────────────────
-    MustAPI.getEvents()
+    function initAllEvents() {
+        MustAPI.getEvents()
         .then(function (data) {
             if (!data || !Array.isArray(data) || data.length === 0) {
                 console.log('allEvents: no API data, keeping static content.');
@@ -67,6 +68,9 @@
             console.error('allEvents API error:', err);
             // Static content remains as fallback
         });
+    }
+    
+    initAllEvents();
 
     // ── Modal opener (overrides the static one when API data available) ──
     window.openApiModal = function (index) {
@@ -106,4 +110,9 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
+
+    // ════════════════════════════════════════
+    // AUTO-REFRESH LIVE DATA (5 seconds)
+    // ════════════════════════════════════════
+    setInterval(initAllEvents, 5000);
 })();

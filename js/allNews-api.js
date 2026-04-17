@@ -19,7 +19,8 @@
     // Global store for modal usage
     window._apiAllNews = [];
 
-    MustAPI.getNews()
+    function initAllNews() {
+        MustAPI.getNews()
         .then(function (data) {
             if (!data || !Array.isArray(data) || data.length === 0) {
                 console.log('allNews: no API data, keeping static content.');
@@ -53,6 +54,9 @@
         .catch(function (err) {
             console.error('allNews API error:', err);
         });
+    }
+
+    initAllNews();
 
     /**
      * Simple detail view: alert or inject into an existing modal if present.
@@ -96,4 +100,9 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
+
+    // ════════════════════════════════════════
+    // AUTO-REFRESH LIVE DATA (5 seconds)
+    // ════════════════════════════════════════
+    setInterval(initAllNews, 5000);
 })();

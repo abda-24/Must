@@ -107,6 +107,11 @@ document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
     else if (s === 'contact') loadContacts();
     else if (s === 'slider') loadSlider();
     else if (s === 'settings') loadSettings();
+    else if (s === 'activities') loadActivities();
+    else if (s === 'categories') loadCategories();
+    else if (s === 'clubs') loadClubs();
+    else if (s === 'competitions') loadCompetitions();
+    else if (s === 'adminusers') loadAdminUsers();
   });
 });
 
@@ -118,6 +123,9 @@ async function loadDashboard() {
   try { var d = await apiJSON('GET','/api/News'); document.getElementById('statNews').textContent = Array.isArray(d)?d.length:0; } catch(e) { document.getElementById('statNews').textContent = '?'; }
   try { var d = await apiJSON('GET','/api/Contact'); document.getElementById('statContact').textContent = Array.isArray(d)?d.length:0; } catch(e) { document.getElementById('statContact').textContent = '?'; }
   try { var d = await apiJSON('GET','/api/Slider'); document.getElementById('statSlider').textContent = Array.isArray(d)?d.length:0; } catch(e) { document.getElementById('statSlider').textContent = '?'; }
+  try { var d = await apiJSON('GET','/api/Activities'); document.getElementById('statActivities').textContent = Array.isArray(d)?d.length:0; } catch(e) { document.getElementById('statActivities').textContent = '?'; }
+  try { var d = await apiJSON('GET','/api/Clubs'); document.getElementById('statClubs').textContent = Array.isArray(d)?d.length:0; } catch(e) { document.getElementById('statClubs').textContent = '?'; }
+  try { var d = await apiJSON('GET','/api/Competitions'); document.getElementById('statCompetitions').textContent = Array.isArray(d)?d.length:0; } catch(e) { document.getElementById('statCompetitions').textContent = '?'; }
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -447,4 +455,351 @@ window.saveSettings = async function() {
 // ═════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function() {
     loadDashboard();
+    
+    // Auto-refresh live data correctly
+    setInterval(loadEvents, 5000);
+    setInterval(loadNews, 5000);
+    setInterval(loadActivities, 5000);
+    setInterval(loadClubs, 5000);
+    setInterval(loadCompetitions, 5000);
 });
+
+// ═════════════════════════════════════════════════════════════
+// ACTIVITY CATEGORIES CRUD
+// ═════════════════════════════════════════════════════════════
+var _categories = [];
+
+async function loadCategories() {
+  try {
+    _categories = await apiJSON('GET', '/api/ActivityCategories') || [];
+    var tb = document.getElementById('categoriesTable');
+    if (!_categories.length) { tb.innerHTML = '<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-tags"></i><p>No categories found</p></div></td></tr>'; return; }
+    tb.innerHTML = _categories.map(function(c) {
+      return '<tr>' +
+        '<td>' + c.id + '</td>' +
+        '<td><strong>' + esc(c.name) + '</strong></td>' +
+        '<td>' + (c.icon ? '<i class="fa-solid ' + esc(c.icon) + '"></i> ' + esc(c.icon) : '—') + '</td>' +
+        '<td><div class="actions">' +
+          '<button class="btn btn-sm btn-edit" onclick="editCategory(' + c.id + ')"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-sm btn-delete" onclick="deleteCategory(' + c.id + ')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) { toast('Failed to load categories: ' + e.message, 'error'); }
+}
+
+function openCategoryModal(cat) {
+  document.getElementById('categoryModalTitle').textContent = cat ? 'Edit Category' : 'Add Category';
+  document.getElementById('categoryId').value = cat ? cat.id : '';
+  document.getElementById('categoryNameInput').value = cat ? cat.name : '';
+  document.getElementById('categoryIconInput').value = cat ? cat.icon || '' : '';
+  document.getElementById('categoryModalOverlay').classList.add('show');
+}
+
+window.editCategory = function(id) {
+  var cat = _categories.find(function(c) { return c.id === id; });
+  if (cat) openCategoryModal(cat);
+};
+
+window.deleteCategory = async function(id) {
+  if (!confirm('Delete this category?')) return;
+  try { await apiJSON('DELETE', '/api/ActivityCategories/' + id); toast('Category deleted'); loadCategories(); }
+  catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+};
+
+document.getElementById('categoryForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var id   = document.getElementById('categoryId').value;
+  var body = {
+    name: document.getElementById('categoryNameInput').value.trim(),
+    icon: document.getElementById('categoryIconInput').value.trim() || null
+  };
+  try {
+    if (id) await apiJSON('PUT', '/api/ActivityCategories/' + id, body);
+    else    await apiJSON('POST', '/api/ActivityCategories', body);
+    toast(id ? 'Category updated' : 'Category created');
+    closeModal('categoryModalOverlay');
+    loadCategories();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+});
+
+// ═════════════════════════════════════════════════════════════
+// ACTIVITIES CRUD
+// ═════════════════════════════════════════════════════════════
+var _activities = [];
+
+async function loadActivities() {
+  // Also refresh categories for the modal dropdown
+  if (!_categories.length) {
+    try { _categories = await apiJSON('GET', '/api/ActivityCategories') || []; } catch(e) {}
+  }
+  try {
+    _activities = await apiJSON('GET', '/api/Activities') || [];
+    var tb = document.getElementById('activitiesTable');
+    if (!_activities.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-person-running"></i><p>No activities found</p></div></td></tr>'; return; }
+    tb.innerHTML = _activities.map(function(a) {
+      var imgSrc = a.imageUrl ? (a.imageUrl.startsWith('http') ? a.imageUrl : API + a.imageUrl) : '';
+      var catName = '';
+      if (a.activityCategoryId) {
+        var cat = _categories.find(function(c) { return c.id === a.activityCategoryId; });
+        catName = cat ? esc(cat.name) : a.activityCategoryId;
+      }
+      return '<tr>' +
+        '<td>' + a.id + '</td>' +
+        '<td>' + (imgSrc ? '<img src="' + esc(imgSrc) + '" onerror="this.style.display=\'none\'">' : '—') + '</td>' +
+        '<td><strong>' + esc(a.title) + '</strong></td>' +
+        '<td>' + esc((a.description || '').substring(0, 60)) + (a.description && a.description.length > 60 ? '…' : '') + '</td>' +
+        '<td>' + esc(a.duration || '—') + '</td>' +
+        '<td>' + esc(a.numberOfPlayers || '—') + '</td>' +
+        '<td>' + (catName || '—') + '</td>' +
+        '<td><div class="actions">' +
+          '<button class="btn btn-sm btn-edit" onclick="editActivity(' + a.id + ')"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-sm btn-delete" onclick="deleteActivity(' + a.id + ')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) { toast('Failed to load activities: ' + e.message, 'error'); }
+}
+
+function openActivityModal(act) {
+  document.getElementById('activityModalTitle').textContent = act ? 'Edit Activity' : 'Add Activity';
+  document.getElementById('activityId').value = act ? act.id : '';
+  document.getElementById('activityTitleInput').value = act ? act.title : '';
+  document.getElementById('activityDescInput').value = act ? act.description || '' : '';
+  document.getElementById('activityDurationInput').value = act ? act.duration || '' : '';
+  document.getElementById('activityPlayersInput').value = act ? act.numberOfPlayers || '' : '';
+  // Populate category dropdown
+  var sel = document.getElementById('activityCategoryInput');
+  sel.innerHTML = '<option value="">-- Select Category --</option>' +
+    _categories.map(function(c) {
+      var selected = act && act.activityCategoryId === c.id ? ' selected' : '';
+      return '<option value="' + c.id + '"' + selected + '>' + esc(c.name) + '</option>';
+    }).join('');
+  document.getElementById('activityFileInput').value = '';
+  document.getElementById('activityModalOverlay').classList.add('show');
+}
+
+window.editActivity = async function(id) {
+  if (!_categories.length) {
+    try { _categories = await apiJSON('GET', '/api/ActivityCategories') || []; } catch(e) {}
+  }
+  var act = _activities.find(function(a) { return a.id === id; });
+  if (act) openActivityModal(act);
+};
+
+window.deleteActivity = async function(id) {
+  if (!confirm('Delete this activity?')) return;
+  try { await apiJSON('DELETE', '/api/Activities/' + id); toast('Activity deleted'); loadActivities(); loadDashboard(); }
+  catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+};
+
+document.getElementById('activityForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var id  = document.getElementById('activityId').value;
+  var fd  = new FormData();
+  fd.append('Title', document.getElementById('activityTitleInput').value.trim());
+  fd.append('Description', document.getElementById('activityDescInput').value.trim());
+  var dur = document.getElementById('activityDurationInput').value.trim();
+  if (dur) fd.append('Duration', dur);
+  var players = document.getElementById('activityPlayersInput').value.trim();
+  if (players) fd.append('PlayersCount', players);
+  var catId = document.getElementById('activityCategoryInput').value;
+  if (catId) fd.append('CategoryId', parseInt(catId));
+  var file = document.getElementById('activityFileInput').files[0];
+  if (file) fd.append('Image', file);
+  try {
+    if (id) await apiForm('PUT', '/api/Activities/' + id, fd);
+    else    await apiForm('POST', '/api/Activities', fd);
+    toast(id ? 'Activity updated' : 'Activity created');
+    closeModal('activityModalOverlay');
+    loadActivities();
+    loadDashboard();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+});
+
+// ═════════════════════════════════════════════════════════════
+// CLUBS CRUD
+// ═════════════════════════════════════════════════════════════
+var _clubs = [];
+
+async function loadClubs() {
+  try {
+    _clubs = await apiJSON('GET', '/api/Clubs') || [];
+    var tb = document.getElementById('clubsTable');
+    if (!_clubs.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-shield-halved"></i><p>No clubs found</p></div></td></tr>'; return; }
+    tb.innerHTML = _clubs.map(function(cl) {
+      var imgSrc = cl.imageUrl ? (cl.imageUrl.startsWith('http') ? cl.imageUrl : API + cl.imageUrl) : '';
+      return '<tr>' +
+        '<td>' + cl.id + '</td>' +
+        '<td>' + (imgSrc ? '<img src="' + esc(imgSrc) + '" onerror="this.style.display=\'none\'">' : '—') + '</td>' +
+        '<td><strong>' + esc(cl.name) + '</strong></td>' +
+        '<td>' + esc((cl.description || '').substring(0, 80)) + (cl.description && cl.description.length > 80 ? '…' : '') + '</td>' +
+        '<td><div class="actions">' +
+          '<button class="btn btn-sm btn-edit" onclick="editClub(' + cl.id + ')"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-sm btn-delete" onclick="deleteClub(' + cl.id + ')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) { toast('Failed to load clubs: ' + e.message, 'error'); }
+}
+
+function openClubModal(cl) {
+  document.getElementById('clubModalTitle').textContent = cl ? 'Edit Club' : 'Add Club';
+  document.getElementById('clubId').value = cl ? cl.id : '';
+  document.getElementById('clubNameInput').value = cl ? cl.name : '';
+  document.getElementById('clubDescInput').value = cl ? cl.description || '' : '';
+  document.getElementById('clubFileInput').value = '';
+  document.getElementById('clubModalOverlay').classList.add('show');
+}
+
+window.editClub = function(id) {
+  var cl = _clubs.find(function(c) { return c.id === id; });
+  if (cl) openClubModal(cl);
+};
+
+window.deleteClub = async function(id) {
+  if (!confirm('Delete this club?')) return;
+  try { await apiJSON('DELETE', '/api/Clubs/' + id); toast('Club deleted'); loadClubs(); loadDashboard(); }
+  catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+};
+
+document.getElementById('clubForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var id = document.getElementById('clubId').value;
+  var fd = new FormData();
+  fd.append('Name', document.getElementById('clubNameInput').value.trim());
+  fd.append('Description', document.getElementById('clubDescInput').value.trim());
+  var file = document.getElementById('clubFileInput').files[0];
+  if (file) fd.append('File', file);
+  try {
+    if (id) await apiForm('PUT', '/api/Clubs/' + id, fd);
+    else    await apiForm('POST', '/api/Clubs', fd);
+    toast(id ? 'Club updated' : 'Club created');
+    closeModal('clubModalOverlay');
+    loadClubs();
+    loadDashboard();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+});
+
+// ═════════════════════════════════════════════════════════════
+// COMPETITIONS CRUD
+// ═════════════════════════════════════════════════════════════
+var _competitions = [];
+
+async function loadCompetitions() {
+  try {
+    _competitions = await apiJSON('GET', '/api/Competitions') || [];
+    var tb = document.getElementById('competitionsTable');
+    if (!_competitions.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-trophy"></i><p>No competitions found</p></div></td></tr>'; return; }
+    tb.innerHTML = _competitions.map(function(comp) {
+      var imgSrc = comp.imageUrl ? (comp.imageUrl.startsWith('http') ? comp.imageUrl : API + comp.imageUrl) : '';
+      return '<tr>' +
+        '<td>' + comp.id + '</td>' +
+        '<td>' + (imgSrc ? '<img src="' + esc(imgSrc) + '" onerror="this.style.display=\'none\'">' : '—') + '</td>' +
+        '<td><strong>' + esc(comp.title) + '</strong></td>' +
+        '<td>' + esc((comp.description || '').substring(0, 60)) + (comp.description && comp.description.length > 60 ? '…' : '') + '</td>' +
+        '<td>' + shortDate(comp.startDate) + '</td>' +
+        '<td>' + shortDate(comp.endDate) + '</td>' +
+        '<td><div class="actions">' +
+          '<button class="btn btn-sm btn-edit" onclick="editCompetition(' + comp.id + ')"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-sm btn-delete" onclick="deleteCompetition(' + comp.id + ')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) { toast('Failed to load competitions: ' + e.message, 'error'); }
+}
+
+function openCompetitionModal(comp) {
+  document.getElementById('competitionModalTitle').textContent = comp ? 'Edit Competition' : 'Add Competition';
+  document.getElementById('competitionId').value = comp ? comp.id : '';
+  document.getElementById('competitionTitleInput').value = comp ? comp.title : '';
+  document.getElementById('competitionDescInput').value = comp ? comp.description || '' : '';
+  document.getElementById('competitionStartInput').value = comp && comp.startDate ? comp.startDate.substring(0, 16) : '';
+  document.getElementById('competitionEndInput').value = comp && comp.endDate ? comp.endDate.substring(0, 16) : '';
+  document.getElementById('competitionFileInput').value = '';
+  document.getElementById('competitionModalOverlay').classList.add('show');
+}
+
+window.editCompetition = function(id) {
+  var comp = _competitions.find(function(c) { return c.id === id; });
+  if (comp) openCompetitionModal(comp);
+};
+
+window.deleteCompetition = async function(id) {
+  if (!confirm('Delete this competition?')) return;
+  try { await apiJSON('DELETE', '/api/Competitions/' + id); toast('Competition deleted'); loadCompetitions(); loadDashboard(); }
+  catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+};
+
+document.getElementById('competitionForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var id = document.getElementById('competitionId').value;
+  var fd = new FormData();
+  fd.append('Title', document.getElementById('competitionTitleInput').value.trim());
+  fd.append('Description', document.getElementById('competitionDescInput').value.trim());
+  var startDate = document.getElementById('competitionStartInput').value;
+  var endDate   = document.getElementById('competitionEndInput').value;
+  if (startDate) fd.append('StartDate', startDate);
+  if (endDate)   fd.append('EndDate', endDate);
+  var file = document.getElementById('competitionFileInput').files[0];
+  if (file) fd.append('File', file);
+  try {
+    if (id) await apiForm('PUT', '/api/Competitions/' + id, fd);
+    else    await apiForm('POST', '/api/Competitions', fd);
+    toast(id ? 'Competition updated' : 'Competition created');
+    closeModal('competitionModalOverlay');
+    loadCompetitions();
+    loadDashboard();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+});
+
+// ═════════════════════════════════════════════════════════════
+// ADMIN USERS MANAGEMENT
+// ═════════════════════════════════════════════════════════════
+var _adminUsers = [];
+
+async function loadAdminUsers() {
+  try {
+    _adminUsers = await apiJSON('GET', '/api/AdminUsers') || [];
+    var tb = document.getElementById('adminUsersTable');
+    if (!_adminUsers.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-users-gear"></i><p>No admin users found</p></div></td></tr>'; return; }
+    tb.innerHTML = _adminUsers.map(function(u) {
+      var isActive = u.isActive !== false; // default active if field missing
+      return '<tr>' +
+        '<td>' + u.id + '</td>' +
+        '<td><strong>' + esc(u.fullName || u.name || '—') + '</strong></td>' +
+        '<td><a href="mailto:' + esc(u.email) + '">' + esc(u.email) + '</a></td>' +
+        '<td><span class="badge ' + (isActive ? 'badge-green' : 'badge-red') + '">' + (isActive ? 'Active' : 'Inactive') + '</span></td>' +
+        '<td><div class="actions">' +
+          '<button class="btn btn-sm btn-toggle" onclick="toggleAdminUser(\'' + u.id + '\')" title="' + (isActive ? 'Deactivate' : 'Activate') + '"><i class="fa-solid fa-power-off"></i></button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) { toast('Failed to load admin users: ' + e.message, 'error'); }
+}
+
+window.toggleAdminUser = async function(id) {
+  try {
+    await fetch(API + '/api/AdminUsers/' + id + '/toggle-status', { method: 'PATCH', headers: authHeaders() });
+    toast('User status toggled');
+    loadAdminUsers();
+  } catch(e) { toast('Toggle failed: ' + e.message, 'error'); }
+};
+
+// ═════════════════════════════════════════════════════════════
+// PARTICIPANT ACTIONS (utility — called from console or future UI)
+// ═════════════════════════════════════════════════════════════
+window.participantJoinClub = async function(clubId) {
+  try { var r = await apiJSON('POST', '/api/Participants/JoinClub', { clubId: clubId }); toast('Joined club successfully'); return r; }
+  catch(e) { toast('Join club failed: ' + e.message, 'error'); }
+};
+
+window.participantRegisterActivity = async function(activityId) {
+  try { var r = await apiJSON('POST', '/api/Participants/RegisterActivity', { activityId: activityId }); toast('Registered for activity'); return r; }
+  catch(e) { toast('Register activity failed: ' + e.message, 'error'); }
+};
+
+window.participantRegisterCompetition = async function(competitionId) {
+  try { var r = await apiJSON('POST', '/api/Participants/RegisterCompetition', { competitionId: competitionId }); toast('Registered for competition'); return r; }
+  catch(e) { toast('Register competition failed: ' + e.message, 'error'); }
+};
+
+window.participantRegisterEvent = async function(eventId) {
+  try { var r = await apiJSON('POST', '/api/Participants/RegisterEvent', { eventId: eventId }); toast('Registered for event'); return r; }
+  catch(e) { toast('Register event failed: ' + e.message, 'error'); }
+};
