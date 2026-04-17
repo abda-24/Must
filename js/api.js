@@ -240,11 +240,12 @@ async function getNewsById(id) {
  * @param {string} title
  * @param {string} content
  */
-async function createNews(file, title, content) {
+async function createNews(file, title, content, createdAt) {
     const fd = new FormData();
     if (file) fd.append('File', file);
     fd.append('Title', title);
     fd.append('Content', content);
+    if (createdAt) fd.append('CreatedAt', createdAt);
     return formRequest('POST', '/api/News', fd, true);
 }
 
@@ -255,13 +256,15 @@ async function createNews(file, title, content) {
  * @param {string} title
  * @param {string} content
  * @param {string} existingImageUrl
+ * @param {string} createdAt
  */
-async function updateNews(id, file, title, content, existingImageUrl = '') {
+async function updateNews(id, file, title, content, existingImageUrl, createdAt) {
     const fd = new FormData();
     if (file) fd.append('File', file);
     fd.append('Title', title);
     fd.append('Content', content);
     if (existingImageUrl) fd.append('ExistingImageUrl', existingImageUrl);
+    if (createdAt) fd.append('CreatedAt', createdAt);
     return formRequest('PUT', `/api/News/${id}`, fd, true);
 }
 

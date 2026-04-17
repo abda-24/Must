@@ -232,6 +232,7 @@ function openNewsModal(n) {
   document.getElementById('newsId').value = n ? n.id : '';
   document.getElementById('newsExistingImg').value = n ? n.imageUrl || '' : '';
   document.getElementById('newsTitleInput').value = n ? n.title : '';
+  document.getElementById('newsDateInput').value = n && n.createdAt ? n.createdAt.substring(0, 16) : '';
   document.getElementById('newsContentInput').value = n ? n.content || '' : '';
   document.getElementById('newsFileInput').value = '';
   document.getElementById('newsFileInput').required = !n; // Require file only on add
@@ -255,6 +256,8 @@ document.getElementById('newsForm').addEventListener('submit', async function(e)
   var fd = new FormData();
   fd.append('Title', document.getElementById('newsTitleInput').value.trim());
   fd.append('Content', document.getElementById('newsContentInput').value.trim());
+  var newsDate = document.getElementById('newsDateInput').value;
+  if (newsDate) fd.append('CreatedAt', newsDate);
   var file = document.getElementById('newsFileInput').files[0];
   if (file) fd.append('File', file);
   if (id) {
