@@ -37,7 +37,7 @@
                 const imgSrc = item.imageUrl || item.image || 'img/news5.jpg';
 
                 newsContainer.innerHTML += `
-                    <div class="card" onclick="openApiNewsDetail(${index})" style="cursor:pointer;">
+                    <div class="card" onclick="window.location.href='news-details.html?id=${item.id}'" style="cursor:pointer;">
                         <img src="${escHtml(imgSrc)}" alt="${escHtml(item.title)}" onerror="this.src='img/news5.jpg'">
                         <div class="card-content">
                             <div class="meta">

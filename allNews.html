@@ -1261,10 +1261,8 @@ body {
 
     function showNewsDetail(index) {
         const item = _apiAllNews[index];
-        if (!item) return;
-        const date  = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '';
-        const extra = date ? ` (${date})` : '';
-        alert(item.title + extra + '\n\n' + (item.content || item.description || ''));
+        if (!item || !item.id) return;
+        window.location.href = `news-details.html?id=${item.id}`;
     }
 
     function filterCards(category) {

@@ -692,13 +692,18 @@
 
         /* GRID */
         .events-container {
-            width: 85%;
-            margin: 0 auto 60px;
-
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 60px auto;
+            padding: 0 20px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 40px;
-            /* زودنا المسافات */
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow-x: hidden;
         }
 
 
